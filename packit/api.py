@@ -74,10 +74,10 @@ from packit.status import Status
 from packit.sync import SyncFilesItem, sync_files
 from packit.upstream import Upstream
 from packit.utils import commands
-from packit.utils.obs_helper import OBSHelper
 from packit.utils.bodhi import get_bodhi_client
 from packit.utils.changelog_helper import ChangelogHelper
 from packit.utils.extensions import assert_existence
+from packit.utils.obs_helper import OBSHelper
 from packit.utils.repo import (
     commit_exists,
     get_commit_diff,
@@ -2152,30 +2152,27 @@ The first dist-git commit to be synced is '{short_hash}'.
         return cmd_result.stdout
 
     def run_obs_build(
-            self,
-            build_dir: str,  # prj_str
-            package_name: str,
-            project_name: str,
-            upstream_ref: Optional[str],
-            wait: bool = False
+        self,
+        build_dir: str,  # prj_str
+        package_name: str,
+        project_name: str,
+        upstream_ref: Optional[str],
+        wait: bool = False,
     ):
         """
         Commit a build to the Open Build Service
         """
 
         # Initialise project directory
-        package_dir = self.obs_helper.init_project(build_dir, package_name, project_name)
+        package_dir = self.obs_helper.init_project(
+            build_dir, package_name, project_name,
+        )
 
         srpm = self.create_srpm(upstream_ref=upstream_ref, release_suffix="0")
 
         # Commit srpm to OBS
         self.obs_helper.commit_srpm_and_get_build_results(
-        srpm,
-        project_name,
-        package_name,
-        package_dir,
-        upstream_ref,
-        wait
+            srpm, project_name, package_name, package_dir, upstream_ref, wait,
         )
 
     def push_bodhi_update(self, update_alias: str):

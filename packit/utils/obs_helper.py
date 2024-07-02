@@ -1,16 +1,16 @@
 # Copyright Contributors to the Packit project.
 # SPDX-License-Identifier: MIT
 
-import os
 import logging
+import os
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from dataclasses import dataclass
-import xml.etree.ElementTree as ET
 
-from osc import core, conf
+from osc import conf, core
 
-from packit.config import  PackageConfig
+from packit.config import PackageConfig
 from packit.config.aliases import DEPRECATED_TARGET_MAP
 
 logger = logging.getLogger(__name__)
@@ -74,9 +74,13 @@ class OBSHelper:
 
         if distro == "epel":
             if version == "9":
-                return [XmlPathEntry(project=f"Fedora:EPEL:{version}", repository="stream")]
+                return [
+                    XmlPathEntry(project=f"Fedora:EPEL:{version}", repository="stream"),
+                ]
             if version in ("8", "7"):
-                return [XmlPathEntry(project=f"Fedora:EPEL:{version}", repository="CentOS")]
+                return [
+                    XmlPathEntry(project=f"Fedora:EPEL:{version}", repository="CentOS"),
+                ]
 
         if distro == "opensuse-leap":
             return [
@@ -87,7 +91,9 @@ class OBSHelper:
             if arch == "x86_64":
                 return [XmlPathEntry(project="openSUSE:Factory", repository="snapshot")]
             if arch in ("s390x", "aarch64", "ppc64le"):
-                postfix = {"s390x": "zSystem", "aarch64": "ARM", "ppc64le": "PowerPC"}[arch]
+                postfix = {"s390x": "zSystem", "aarch64": "ARM", "ppc64le": "PowerPC"}[
+                    arch
+                ]
                 return [
                     XmlPathEntry(
                         project=f"openSUSE:Factory:{postfix}",
@@ -96,6 +102,7 @@ class OBSHelper:
                 ]
 
         raise ValueError(f"No preset available for {distro=}, {version=}, {arch=}")
+
     @staticmethod
     def targets_to_project_meta(
         targets: list[str],
@@ -168,17 +175,19 @@ class OBSHelper:
         root.append(title)
         root.append(descr)
 
-        package_url = core.makeurl(OBSHelper._API_URL, ["source", project_name, package_name, "_meta"])
+        package_url = core.makeurl(
+            OBSHelper._API_URL, ["source", project_name, package_name, "_meta"],
+        )
         metafile = core.metafile(package_url, ET.tostring(root))
         metafile.sync()
 
     @staticmethod
     def create_obs_project(
-            project: str,
-            targets: str,
-            owner: Optional[str],
-            package_config: PackageConfig,
-            description: Optional[str]
+        project: str,
+        targets: str,
+        owner: Optional[str],
+        package_config: PackageConfig,
+        description: Optional[str],
     ):
         conf.get_config()
         owner = owner or conf.config["api_host_options"][OBSHelper._API_URL]["user"]
@@ -201,7 +210,9 @@ class OBSHelper:
 
         logger.info(f"Using OBS project name = {project_name}")
 
-        project_url = core.makeurl(OBSHelper._API_URL, ["source", project_name, "_meta"])
+        project_url = core.makeurl(
+            OBSHelper._API_URL, ["source", project_name, "_meta"],
+        )
         metafile = core.metafile(project_url, ET.tostring(project_metadata))
         metafile.sync()
 
@@ -216,11 +227,11 @@ class OBSHelper:
 
     @staticmethod
     def init_project(
-            build_dir: str,  # prj_str
-            package_name: str,
-            project_name: str
-    )-> Path:
-        core.Project.init_project(OBSHelper._API_URL, (prj_dir := Path(build_dir)), project_name)
+        build_dir: str, package_name: str, project_name: str,  # prj_str
+    ) -> Path:
+        core.Project.init_project(
+            OBSHelper._API_URL, (prj_dir := Path(build_dir)), project_name,
+        )
 
         (pkg_dir := (prj_dir / package_name)).mkdir()
         core.checkout_package(
@@ -245,8 +256,8 @@ class OBSHelper:
         package_name: str,
         package_dir: Path,
         upstream_ref: Optional[str],
-        wait: bool
-        ):
+        wait: bool,
+    ):
         # don't use the files argument of unpack_srcrpm, it allows for shell
         # injection unless sanitized carefully
         core.unpack_srcrpm(str(srpm), package_dir)
@@ -265,4 +276,6 @@ class OBSHelper:
 
         # wait for the build result
         if wait:
-            core.get_results(OBSHelper._API_URL, project_name, package_name, printJoin="", wait=True)
+            core.get_results(
+                OBSHelper._API_URL, project_name, package_name, printJoin="", wait=True,
+            )
