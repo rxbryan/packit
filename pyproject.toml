@@ -56,8 +56,8 @@ dependencies = [
     "rpkg",
     "cachetools",
     "python-fedora",
-    "python-bugzilla"
-    "osc"
+    "python-bugzilla",
+    "osc ~= 1.6.2"
 ]
 
 [project.urls]
