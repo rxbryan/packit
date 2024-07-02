@@ -2165,14 +2165,21 @@ The first dist-git commit to be synced is '{short_hash}'.
 
         # Initialise project directory
         package_dir = self.obs_helper.init_project(
-            build_dir, package_name, project_name,
+            build_dir,
+            package_name,
+            project_name,
         )
 
         srpm = self.create_srpm(upstream_ref=upstream_ref, release_suffix="0")
 
         # Commit srpm to OBS
         self.obs_helper.commit_srpm_and_get_build_results(
-            srpm, project_name, package_name, package_dir, upstream_ref, wait,
+            srpm,
+            project_name,
+            package_name,
+            package_dir,
+            upstream_ref,
+            wait,
         )
 
     def push_bodhi_update(self, update_alias: str):

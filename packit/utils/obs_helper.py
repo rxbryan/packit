@@ -176,7 +176,8 @@ class OBSHelper:
         root.append(descr)
 
         package_url = core.makeurl(
-            OBSHelper._API_URL, ["source", project_name, package_name, "_meta"],
+            OBSHelper._API_URL,
+            ["source", project_name, package_name, "_meta"],
         )
         metafile = core.metafile(package_url, ET.tostring(root))
         metafile.sync()
@@ -211,7 +212,8 @@ class OBSHelper:
         logger.info(f"Using OBS project name = {project_name}")
 
         project_url = core.makeurl(
-            OBSHelper._API_URL, ["source", project_name, "_meta"],
+            OBSHelper._API_URL,
+            ["source", project_name, "_meta"],
         )
         metafile = core.metafile(project_url, ET.tostring(project_metadata))
         metafile.sync()
@@ -227,10 +229,14 @@ class OBSHelper:
 
     @staticmethod
     def init_project(
-        build_dir: str, package_name: str, project_name: str,  # prj_str
+        build_dir: str,
+        package_name: str,
+        project_name: str,  # prj_str
     ) -> Path:
         core.Project.init_project(
-            OBSHelper._API_URL, (prj_dir := Path(build_dir)), project_name,
+            OBSHelper._API_URL,
+            (prj_dir := Path(build_dir)),
+            project_name,
         )
 
         (pkg_dir := (prj_dir / package_name)).mkdir()
@@ -277,5 +283,9 @@ class OBSHelper:
         # wait for the build result
         if wait:
             core.get_results(
-                OBSHelper._API_URL, project_name, package_name, printJoin="", wait=True,
+                OBSHelper._API_URL,
+                project_name,
+                package_name,
+                printJoin="",
+                wait=True,
             )
