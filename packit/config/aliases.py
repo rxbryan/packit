@@ -21,7 +21,7 @@ ALIASES: dict[str, list[str]] = {
     "fedora-branched": ["fedora-38", "fedora-39"],
     "epel-all": ["epel-7", "epel-8", "epel-9"],
     "opensuse-leap-all": (
-        leap_all := ["opensuse-leap-15.5", "opensuse-leap-15.4", "opensuse-leap-15.3"]
+        leap_all := ["opensuse-leap-15.6", "opensuse-leap-15.5", "opensuse-leap-15.4"]
     ),
     "opensuse-all": ["opensuse-tumbleweed", *leap_all],
 }
