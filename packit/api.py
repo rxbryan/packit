@@ -77,7 +77,7 @@ from packit.utils import commands
 from packit.utils.bodhi import get_bodhi_client
 from packit.utils.changelog_helper import ChangelogHelper
 from packit.utils.extensions import assert_existence
-from packit.utils.obs_helper import OBSHelper
+from packit.utils import obs_helper
 from packit.utils.repo import (
     commit_exists,
     get_commit_diff,
@@ -175,7 +175,7 @@ class PackitAPI:
         self._up: Optional[Upstream] = None
         self._dg: Optional[DistGit] = None
         self._copr_helper: Optional[CoprHelper] = None
-        self.obs_helper = OBSHelper
+        self.obs_helper = obs_helper
         self._kerberos_initialized = False
 
     def __repr__(self):

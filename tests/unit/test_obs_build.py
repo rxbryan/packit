@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from packit.utils.obs_helper import OBSHelper
+from packit.utils import obs_helper
 
 _NAME = "home:me:packit"
 _TITLE = "Packit project"
@@ -83,7 +83,7 @@ class TestTargetsToProject:
     ) -> None:
         assert ET.canonicalize(project_meta, strip_text=True) == ET.canonicalize(
             ET.tostring(
-                OBSHelper.targets_to_project_meta(
+                obs_helper.targets_to_project_meta(
                     targets,
                     owner=_PERSON,
                     project_name=f"home:{_PERSON}:packit",
