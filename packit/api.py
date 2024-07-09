@@ -73,11 +73,10 @@ from packit.source_git import SourceGitGenerator
 from packit.status import Status
 from packit.sync import SyncFilesItem, sync_files
 from packit.upstream import Upstream
-from packit.utils import commands
+from packit.utils import commands, obs_helper
 from packit.utils.bodhi import get_bodhi_client
 from packit.utils.changelog_helper import ChangelogHelper
 from packit.utils.extensions import assert_existence
-from packit.utils import obs_helper
 from packit.utils.repo import (
     commit_exists,
     get_commit_diff,

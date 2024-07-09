@@ -89,9 +89,7 @@ def target_to_path(target: str) -> list[XmlPathEntry]:
         if arch == "x86_64":
             return [XmlPathEntry(project="openSUSE:Factory", repository="snapshot")]
         if arch in ("s390x", "aarch64", "ppc64le"):
-            postfix = {"s390x": "zSystem", "aarch64": "ARM", "ppc64le": "PowerPC"}[
-                arch
-            ]
+            postfix = {"s390x": "zSystem", "aarch64": "ARM", "ppc64le": "PowerPC"}[arch]
             return [
                 XmlPathEntry(
                     project=f"openSUSE:Factory:{postfix}",
@@ -100,6 +98,7 @@ def target_to_path(target: str) -> list[XmlPathEntry]:
             ]
 
     raise ValueError(f"No preset available for {distro=}, {version=}, {arch=}")
+
 
 def targets_to_project_meta(
     targets: list[str],
@@ -157,6 +156,7 @@ def targets_to_project_meta(
 
     return root
 
+
 def create_package(project_name: str, package_name: str) -> None:
     """Creates the package with the name ``package_name`` in the project
     ``project_name`` on OBS. No sources are uploaded in the process.
@@ -177,6 +177,7 @@ def create_package(project_name: str, package_name: str) -> None:
     )
     metafile = core.metafile(package_url, ET.tostring(root))
     metafile.sync()
+
 
 def create_obs_project(
     project: str,
@@ -222,6 +223,7 @@ def create_obs_project(
 
     return project_name, package_name
 
+
 def init_project(
     build_dir: str,
     package_name: str,
@@ -248,6 +250,7 @@ def init_project(
         pkg.delete_file(fname)
 
     return pkg_dir
+
 
 def commit_srpm_and_get_build_results(
     srpm: Path,
