@@ -227,7 +227,7 @@ def create_obs_project(
 def init_project(
     build_dir: str,
     package_name: str,
-    project_name: str,  # prj_str
+    project_name: str,
 ) -> Path:
     core.Project.init_project(
         _API_URL,
