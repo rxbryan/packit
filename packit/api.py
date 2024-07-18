@@ -2152,7 +2152,7 @@ The first dist-git commit to be synced is '{short_hash}'.
 
     def run_obs_build(
         self,
-        build_dir: str,  # prj_str
+        build_dir: str,
         package_name: str,
         project_name: str,
         upstream_ref: Optional[str],
@@ -2163,12 +2163,12 @@ The first dist-git commit to be synced is '{short_hash}'.
         """
 
         # Initialise project directory
-        package_dir = self.obs_helper.init_project(
+        package_dir = self.obs_helper.init_obs_project(
             build_dir,
             package_name,
             project_name,
         )
-
+        logger.info(f"build: dir: {build_dir}")
         srpm = self.create_srpm(upstream_ref=upstream_ref, release_suffix="0")
 
         # Commit srpm to OBS

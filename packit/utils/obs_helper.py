@@ -3,6 +3,8 @@
 
 import logging
 import os
+import re
+from typing_extensions import Union
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,7 +33,7 @@ class XmlPathEntry:
 
 
 @dataclass(frozen=True)
-class Repository:
+class OBSRepository:
     """Minimal representation of a repository on OBS that is part of the project
     meta configuration:
 
@@ -110,7 +112,7 @@ def targets_to_project_meta(
     meta xml configuration for the respective project in OBS.
 
     """
-    repos: list[Repository] = []
+    repos: list[OBSRepository] = []
     for target in targets:
         path = target_to_path(target)
         arch = target.split("-")[-1]
@@ -119,7 +121,7 @@ def targets_to_project_meta(
 
         for ind, repo in enumerate(repos):
             if repo.path == path:
-                repos[ind] = Repository(
+                repos[ind] = OBSRepository(
                     name=f"{repo.name}-{arch}",
                     path=path,
                     arch=[*repo.arch, arch],
@@ -127,7 +129,7 @@ def targets_to_project_meta(
                 added = True
 
         if not added:
-            repos.append(Repository(name=name, path=path, arch=[arch]))
+            repos.append(OBSRepository(name=name, path=path, arch=[arch]))
 
     root = ET.Element("project")
     root.attrib["name"] = project_name
@@ -178,6 +180,62 @@ def create_package(project_name: str, package_name: str) -> None:
     metafile = core.metafile(package_url, ET.tostring(root))
     metafile.sync()
 
+def create_changes_file(package_dir: Path):
+    """
+    Creates a changelog file from a by copying the changelog section from the spec file.
+    Sets release to 0 since obs handles release numbers
+
+    Args:
+        package_dir (Path): Path to the directory containing the package spec file.
+
+    Returns:
+        None
+    """
+    specfile = ""
+    content: str
+    release_line = "Release:    0"
+
+    files = [fname for fname in filter(os.path.isfile, os.listdir(package_dir))]
+    for file in files:
+        if file.endswith(".changes"):
+            logger.info(".changes file already exists in package")
+            return
+        elif file.endswith(".spec"):
+            specfile = file
+            break
+
+    if not specfile:
+        raise ValueError("Cannot find spec file in package")
+
+    with open(specfile, "r") as file:
+        content = file.read()
+
+    split_content = re.split(r"%changelog", content, flags=re.IGNORECASE)
+    if len(split_content) < 2:
+        logger.info("Project has no changelog")
+        return
+
+    specfile_content , changes_file_content = split_content[0], "".join(split_content[1:])
+
+    with open(package_dir/specfile, "w") as file:
+        specfile_content = "\n".join(
+            [
+                release_line 
+                if line.lower().startswith("release:")
+                else line for line in specfile_content.splitlines()
+            ]
+        )
+        file.write(specfile_content)
+
+    changes_filename = package_dir/ f"{specfile[:-5]}.changes"
+
+    try:
+        with open(changes_filename, "w") as changes_file:
+            changes_file.write(changes_file_content)
+    except OSError as err:
+        logger.warn(f"Error writing {changes_filename} file: {err}")
+
+    return
 
 def create_obs_project(
     project: str,
@@ -186,6 +244,23 @@ def create_obs_project(
     package_config: PackageConfig,
     description: Optional[str],
 ):
+    """
+    Creates a new OBS project and its associated package, ensuring only a single
+    package is included per call.
+
+    Args:
+        project (str, optional): The desired name for the OBS project. Defaults to None.
+        targets (str): Comma-separated list of build targets for the project. Defaults to "".
+        owner (Optional[str], optional): The owner of the project. Defaults to None (determined from configuration).
+        package_config (PackageConfig): The configuration for the package to be included in the project.
+        description (Optional[str], optional): A description for the project. Defaults to None.
+
+    Returns:
+        Tuple[str, str]: A tuple containing the created project name and associated package name.
+
+    Raises:
+        ValueError: If the provided package_config contains multiple packages.
+    """
     conf.get_config()
     owner = owner or conf.config["api_host_options"][_API_URL]["user"]
     project_name = project or f"home:{owner}:packit"
@@ -205,6 +280,8 @@ def create_obs_project(
         description=description,
     )
 
+    
+
     logger.info(f"Using OBS project name = {project_name}")
 
     project_url = core.makeurl(
@@ -223,12 +300,22 @@ def create_obs_project(
 
     return project_name, package_name
 
-
-def init_project(
+def init_obs_project(
     build_dir: str,
     package_name: str,
     project_name: str,
 ) -> Path:
+    """
+    Initializes an Open Build Service (OBS) project.
+
+    Args:
+        build_dir (str): Base directory for the project (local path).
+        package_name (str): Name of the package to be built.
+        project_name (str): Name of the OBS project to create.
+
+    Returns:
+        Path: Path to the empty package directory within the OBS project.
+    """
     core.Project.init_project(
         _API_URL,
         (prj_dir := Path(build_dir)),
@@ -251,7 +338,6 @@ def init_project(
 
     return pkg_dir
 
-
 def commit_srpm_and_get_build_results(
     srpm: Path,
     project_name: str,
@@ -260,16 +346,36 @@ def commit_srpm_and_get_build_results(
     upstream_ref: Optional[str],
     wait: bool,
 ):
+    """
+    Commits an SRPM and retrieves build results.
+
+    This function unpacks the provided SRPM, and commits all files in the package_dir to OBS, and optionally waits
+    for and retrieves the build results.
+
+    Args:
+        srpm (Path): Path to the SRPM file.
+        project_name (str): Name of the OBS project the package belongs to.
+        package_name (str): Name of the package.
+        package_dir (Path): Path to the directory where the SRPM is unpacked.
+        upstream_ref (Optional[str], optional): Git ref of the last upstream commit in the current branch
+        from which packit should generate patches. Defaults to None.
+        wait (bool, optional): Whether to wait for and retrieve build results. Defaults to True.
+
+    Returns:
+        None
+    """
     # don't use the files argument of unpack_srcrpm, it allows for shell
     # injection unless sanitized carefully
     core.unpack_srcrpm(str(srpm), package_dir)
 
-    core.addFiles(
-        [
-            str(package_dir / fname)
-            for fname in filter(os.path.isfile, os.listdir(package_dir))
-        ],
-    )
+    create_changes_file(package_dir=package_dir)
+
+    files = []
+    for fname in os.listdir(package_dir):
+        if os.path.isfile(package_dir/fname):
+            files.append(str(package_dir/fname))
+            
+    core.addFiles(files)
     pkg = core.Package(package_dir)
     msg = "Created by packit"
     if upstream_ref:
