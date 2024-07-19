@@ -4,7 +4,6 @@
 import logging
 import os
 import re
-from typing_extensions import Union
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -180,6 +179,7 @@ def create_package(project_name: str, package_name: str) -> None:
     metafile = core.metafile(package_url, ET.tostring(root))
     metafile.sync()
 
+
 def create_changes_file(package_dir: Path):
     """
     Creates a changelog file from a by copying the changelog section from the spec file.
@@ -207,7 +207,7 @@ def create_changes_file(package_dir: Path):
     if not specfile:
         raise ValueError("Cannot find spec file in package")
 
-    with open(specfile, "r") as file:
+    with open(specfile) as file:
         content = file.read()
 
     split_content = re.split(r"%changelog", content, flags=re.IGNORECASE)
@@ -215,19 +215,20 @@ def create_changes_file(package_dir: Path):
         logger.info("Project has no changelog")
         return
 
-    specfile_content , changes_file_content = split_content[0], "".join(split_content[1:])
+    specfile_content, changes_file_content = split_content[0], "".join(
+        split_content[1:],
+    )
 
-    with open(package_dir/specfile, "w") as file:
+    with open(package_dir / specfile, "w") as file:
         specfile_content = "\n".join(
             [
-                release_line 
-                if line.lower().startswith("release:")
-                else line for line in specfile_content.splitlines()
-            ]
+                release_line if line.lower().startswith("release:") else line
+                for line in specfile_content.splitlines()
+            ],
         )
         file.write(specfile_content)
 
-    changes_filename = package_dir/ f"{specfile[:-5]}.changes"
+    changes_filename = package_dir / f"{specfile[:-5]}.changes"
 
     try:
         with open(changes_filename, "w") as changes_file:
@@ -236,6 +237,7 @@ def create_changes_file(package_dir: Path):
         logger.warn(f"Error writing {changes_filename} file: {err}")
 
     return
+
 
 def create_obs_project(
     project: str,
@@ -280,8 +282,6 @@ def create_obs_project(
         description=description,
     )
 
-    
-
     logger.info(f"Using OBS project name = {project_name}")
 
     project_url = core.makeurl(
@@ -299,6 +299,7 @@ def create_obs_project(
     create_package(project_name, (package_name := package_names[0]))
 
     return project_name, package_name
+
 
 def init_obs_project(
     build_dir: str,
@@ -338,6 +339,7 @@ def init_obs_project(
 
     return pkg_dir
 
+
 def commit_srpm_and_get_build_results(
     srpm: Path,
     project_name: str,
@@ -372,9 +374,9 @@ def commit_srpm_and_get_build_results(
 
     files = []
     for fname in os.listdir(package_dir):
-        if os.path.isfile(package_dir/fname):
-            files.append(str(package_dir/fname))
-            
+        if os.path.isfile(package_dir / fname):
+            files.append(str(package_dir / fname))
+
     core.addFiles(files)
     pkg = core.Package(package_dir)
     msg = "Created by packit"
