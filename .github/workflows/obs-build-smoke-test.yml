@@ -6,6 +6,7 @@ on:
       - opened
       - edited
       - synchronize
+  workflow_dispatch:
 
 jobs:
   build-packit-in-obs:
@@ -13,14 +14,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Create osc config
+      - uses: actions/setup-python@v4
         with:
           OBS_USER: ${{ secrets.OBS_USERNAME }}
           OBS_PASSWORD: ${{ secrets.OBS_PASSWORD }}
+      - name: Create osc config
+
         run: |
-          mkdir -p $HOME/.config/osc/ && echo -e "[general]\napiurl=https://api.opensuse.org\n[https://api.opensuse.org]\nuser=$OBS_USER\npass=$OBS_PASSWORD\ncredentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager" > $HOME/.config/osc/oscrc
+          mkdir -p $HOME/.config/osc/
+          cat << EOF > $HOME/.config/osc/oscrc
+          [general]
+          apiurl=https://api.opensuse.org
+          [https://api.opensuse.org]
+          user=$OBS_USER
+          pass=$OBS_PASSWORD
+          credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager
+          EOF
 
       - name: build_packit
         run: |
-          pip3 install --user --editable . && packit "build in-obs"
+          pip3 install --user --editable .
+          packit build-in-obs
