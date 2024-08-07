@@ -5,12 +5,24 @@ import logging
 from datetime import timedelta
 
 from cachetools.func import ttl_cache
+from opensuse_distro_aliases import get_distro_aliases
 
 from packit.exceptions import PackitException
 from packit.utils.bodhi import get_bodhi_client
 from packit.utils.commands import run_command
 from packit.utils.decorators import fallback_return_value
 from packit.utils.monitoring import Pushgateway
+
+OPENSUSE_ALIASES = get_distro_aliases()
+LEAP_ALL = [
+    f"{d.name.lower().replace(' ', '-')}-{d.version}"
+    for d in OPENSUSE_ALIASES["opensuse-leap-all"]
+]
+TUMBLEWEED_ALL = [
+    f"{d.name.lower().replace(' ', '-')}"
+    for d in OPENSUSE_ALIASES["opensuse-tumbleweed-all"]
+]
+
 
 ALIASES: dict[str, list[str]] = {
     "fedora-all": ["fedora-38", "fedora-39", "fedora-rawhide"],
@@ -20,10 +32,8 @@ ALIASES: dict[str, list[str]] = {
     "fedora-latest-stable": ["fedora-39"],
     "fedora-branched": ["fedora-38", "fedora-39"],
     "epel-all": ["epel-7", "epel-8", "epel-9"],
-    "opensuse-leap-all": (
-        leap_all := ["opensuse-leap-15.6", "opensuse-leap-15.5", "opensuse-leap-15.4"]
-    ),
-    "opensuse-all": ["opensuse-tumbleweed", *leap_all],
+    "opensuse-leap-all": LEAP_ALL,
+    "opensuse-all": [*TUMBLEWEED_ALL, *LEAP_ALL],
 }
 
 ARCHITECTURE_LIST: list[str] = [
